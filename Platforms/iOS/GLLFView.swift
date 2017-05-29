@@ -14,7 +14,7 @@ open class GLLFView: GLKView {
     var position:AVCaptureDevicePosition = .back
     var orientation:AVCaptureVideoOrientation = .portrait
 
-    fileprivate var ciContext: CIContext?
+    fileprivate lazy var ciContext: CIContext = CIContext(eaglContext: self.context, options: GLLFView.defaultOptions)
     fileprivate var displayImage: CIImage?
     fileprivate weak var currentStream:NetStream? {
         didSet {
@@ -39,7 +39,7 @@ open class GLLFView: GLKView {
         enableSetNeedsDisplay = true
         backgroundColor = GLLFView.defaultBackgroundColor
         layer.backgroundColor = GLLFView.defaultBackgroundColor.cgColor
-        ciContext = CIContext(eaglContext: context, options: GLLFView.defaultOptions)
+        //ciContext = CIContext(eaglContext: context, options: GLLFView.defaultOptions)
     }
 
     open override func draw(_ rect: CGRect) {
@@ -50,10 +50,10 @@ open class GLLFView: GLKView {
         var inRect:CGRect = CGRect(x: 0, y: 0, width: CGFloat(drawableWidth), height: CGFloat(drawableHeight))
         var fromRect:CGRect = displayImage.extent
         VideoGravityUtil.calclute(videoGravity, inRect: &inRect, fromRect: &fromRect)
-        if position == .front, let context = ciContext {
-            context.draw(displayImage.applyingOrientation(2), in: inRect, from: fromRect)
-        } else if let context = ciContext {
-            context.draw(displayImage, in: inRect, from: fromRect)
+        if position == .front {
+            ciContext.draw(displayImage.applyingOrientation(2), in: inRect, from: fromRect)
+        } else {
+            ciContext.draw(displayImage, in: inRect, from: fromRect)
         }
     }
 
@@ -72,9 +72,7 @@ open class GLLFView: GLKView {
 extension GLLFView: NetStreamDrawable {
     // MARK: NetStreamDrawable
     func render(image: CIImage, to toCVPixelBuffer: CVPixelBuffer) {
-        if let context = ciContext {
-            context.render(image, to: toCVPixelBuffer)
-        }
+        ciContext.render(image, to: toCVPixelBuffer)
     }
     func draw(image:CIImage) {
         displayImage = image
